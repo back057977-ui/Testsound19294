@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>소리 크기 측정해 보기</title>
+<style>
+    body {
+        font-family: Arial;
+        background: #111;
+        color: #fff;
+        text-align: center;
+        padding: 20px;
+    }
+    #connect {
+        padding: 10px 20px;
+        font-size: 18px;
+        background: #0a74ff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+    }
+    #bars {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+        height: 200px;
+    }
+    .bar {
+        width: 3px;
+        margin: 0 1px;
+        background: #0aff95;
+        opacity: 0.4;
+    }
+</style>
+</head>
+<body>
+
+<h1>소리 크기 측정하기</h1>
+
+<button id="connect">micro:bit 연결</button>
+
+<h3>현재 값: <span id="current">0</span></h3>
+<h3>평균: <span id="avg">0</span> / 최대: <span id="max">0</span></h3>
+
+<div id="bars"></div>
+
+<script>
+const connectBtn = document.getElementById("connect");
+const currentText = document.getElementById("current");
+const avgText = document.getElementById("avg");
+const maxText = document.getElementById("max");
+const bars = document.getElementById("bars");
+
+let values = [];  // 최근 100개 값 저장
+
+// 막대 그래프 100개 생성
+for (let i = 0; i < 100; i++) {
+    const bar = document.createElement("div");
+    bar.classList.add("bar");
+    bars.appendChild(bar);
+}
+
+connectBtn.onclick = async () => {
+    try {
+        const port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 9600 });
+
+        const reader = port.readable.getReader();
+        let buffer = "";
+
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += new TextDecoder().decode(value);
+
+            // 줄바꿈 기준으로 데이터 분리
+            let lines = buffer.split("\n");
+            buffer = lines.pop();
+
+            for (let line of lines) {
+                let v = parseInt(line.trim());
+                if (isNaN(v)) continue;
+
+                updateGraph(v);
+            }
+        }
+    } catch (e) {
+        alert("연결 실패: " + e);
+    }
+};
+
+function updateGraph(val) {
+    currentText.textContent = val;
+
+    values.push(val);
+    if (values.length > 100) values.shift();
+
+    // 평균/최대 표시
+    let avg = values.reduce((a, b) => a + b, 0) / values.length;
+    let max = Math.max(...values);
+    avgText.textContent = avg.toFixed(1);
+    maxText.textContent = max;
+
+    // 바 그래프 업데이트
+    const barElements = document.getElementsByClassName("bar");
+    for (let i = 0; i < values.length; i++) {
+        let height = values[i] / 255 * 200;  // 0~200px
+        barElements[100 - values.length + i].style.height = height + "px";
+        barElements[100 - values.length + i].style.opacity = 0.3 + (values[i] / 255 * 0.7);
+    }
+}
+</script>
+
+</body>
+</html>
