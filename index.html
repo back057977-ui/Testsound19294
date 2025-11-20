@@ -18,10 +18,11 @@
         color: white;
         border: none;
         border-radius: 8px;
-    }
+        }
     #bars {
         display: flex;
         justify-content: center;
+        align-items: flex-end; /* 막대가 아래에서 올라오도록 */
         margin-top: 20px;
         height: 200px;
     }
@@ -30,6 +31,7 @@
         margin: 0 1px;
         background: #0aff95;
         opacity: 0.4;
+        height: 0; /* 초기 높이 0으로 시작 */
     }
 </style>
 </head>
